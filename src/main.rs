@@ -58,15 +58,23 @@ fn setup(
     mut materials: ResMut<Assets<CameraMateralData>>,
 ) {
 
-    commands.spawn(Camera2dBundle {
-        transform: Transform::from_xyz(0.0, 0.0, 5.0),
-        ..default()
-    });
-    commands.spawn(MaterialMesh2dBundle {
-        mesh: meshes.add(Mesh::from(ScreenSpaceQuad::default())).into(),
-        material: materials.add(CameraMateralData::new()),
-        ..default()
-    });
+    commands.spawn((
+        Camera2d::default(),
+        Transform::from_xyz(0.0, 0.0, 5.0)
+    ));
+    // Camera2dBundle {
+    //     transform: Transform::from_xyz(0.0, 0.0, 5.0),
+    //     ..default()
+    // });
+    commands.spawn((
+        Mesh2d(meshes.add(Mesh::from(ScreenSpaceQuad::default())).into()),
+        MeshMaterial2d(materials.add(CameraMateralData::new()))
+    ));
+    // MaterialMesh2dBundle {
+    //     mesh: meshes.add(Mesh::from(ScreenSpaceQuad::default())).into(),
+    //     material: materials.add(CameraMateralData::new()),
+    //     ..default()
+    // });
 }
 
 fn resize_event( 
@@ -91,22 +99,22 @@ fn process_camera_translation(
         let horizontal_vector = transform.right();
         let vertical_vector = transform.up();
         if keys.pressed(KeyCode::KeyW) {
-            transform.translation += forward_vector * SPEED * time.delta_seconds();
+            transform.translation += forward_vector * SPEED * time.delta_secs();
         }
         if keys.pressed(KeyCode::KeyS) {
-            transform.translation -= forward_vector * SPEED * time.delta_seconds();
+            transform.translation -= forward_vector * SPEED * time.delta_secs();
         }
         if keys.pressed(KeyCode::KeyA) {
-            transform.translation -= horizontal_vector * SPEED * time.delta_seconds();
+            transform.translation -= horizontal_vector * SPEED * time.delta_secs();
         }
         if keys.pressed(KeyCode::KeyD) {
-            transform.translation += horizontal_vector * SPEED * time.delta_seconds();
+            transform.translation += horizontal_vector * SPEED * time.delta_secs();
         }
         if keys.pressed(KeyCode::KeyR) {
-            transform.translation += vertical_vector * SPEED * time.delta_seconds();
+            transform.translation += vertical_vector * SPEED * time.delta_secs();
         }
         if keys.pressed(KeyCode::KeyF) {
-            transform.translation -= vertical_vector * SPEED * time.delta_seconds();
+            transform.translation -= vertical_vector * SPEED * time.delta_secs();
         }
     }
 }
@@ -121,8 +129,8 @@ fn process_camera_rotation(
         const ROTATION_SPEED: f32 = 0.1;
         if mouse_buttons.pressed(MouseButton::Right) {
             for mut transform in camera_query.iter_mut() {
-                transform.rotate_local_x(-event.delta.y * ROTATION_SPEED * time.delta_seconds());
-                transform.rotate_local_y(-event.delta.x * ROTATION_SPEED * time.delta_seconds());
+                transform.rotate_local_x(-event.delta.y * ROTATION_SPEED * time.delta_secs());
+                transform.rotate_local_y(-event.delta.x * ROTATION_SPEED * time.delta_secs());
             }
         }
     }

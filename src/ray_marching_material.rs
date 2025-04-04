@@ -74,7 +74,7 @@ struct Spheres {
 //Move information from the "Game World" to the "Render World"
 fn extract_raymarching_material(
     mut commands: Commands,
-    ray_marching_query: Extract<Query<(Entity, &Handle<CameraMateralData>)>>,
+    ray_marching_query: Extract<Query<(Entity, &MeshMaterial2d<CameraMateralData>)>>,
     aspect_ratio_resource: Extract<Res<AspectRatio>>,
     camera_query: Extract<Query<&Transform, With<Camera2d>>>
 ) {
@@ -94,7 +94,7 @@ fn extract_raymarching_material(
 //Update the buffers with the data taken from the "Game World" and sent to the "Render World" so they can be used by the GPU
 fn prepare_raymarching_material(
     materials: Res<RenderAssets<PreparedMaterial2d<CameraMateralData>>>,
-    material_query: Query<(&Transform, &Handle<CameraMateralData>)>,
+    material_query: Query<(&Transform, &MeshMaterial2d<CameraMateralData>)>,
     render_queue: Res<RenderQueue>,
     aspect_ratio_resource: Res<AspectRatio>,
 ) {
