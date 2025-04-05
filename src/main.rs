@@ -1,6 +1,6 @@
 use std::default;
 
-use bevy::{prelude::*, render::{camera, storage::ShaderStorageBuffer}, sprite::{Material2dPlugin, MaterialMesh2dBundle}, window::{PrimaryWindow, WindowResized, WindowResolution}};
+use bevy::{asset::RenderAssetUsages, prelude::*, render::{camera, render_resource::{Extent3d, TextureDimension, TextureFormat}, storage::ShaderStorageBuffer}, sprite::{Material2dPlugin, MaterialMesh2dBundle}, window::{PrimaryWindow, WindowResized, WindowResolution}};
 use bevy_inspector_egui::quick::*;
 use bevy::input::mouse::MouseMotion;
 
@@ -48,7 +48,7 @@ fn main() {
         //     ..Default::default()
         // })
         .add_systems(Startup, setup)
-        .add_systems(Update, (resize_event, process_camera_rotation, process_camera_translation, move_balls))
+        .add_systems(Update, (resize_event, process_camera_rotation, process_camera_translation))
         .run();
 }
 
@@ -57,7 +57,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<CameraMateralData>>,
-    mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
+    mut images: ResMut<Assets<Image>>,
 ) {
 
     commands.spawn((
@@ -68,16 +68,18 @@ fn setup(
     //     transform: Transform::from_xyz(0.0, 0.0, 5.0),
     //     ..default()
     // });
+    let data:Vec<u8> = (0..10*10*10).map(|i| {
+        if i < 100 { 1 } else { 0 }
+    }).collect::<Vec<u8>>(); 
+    let image = Image::new(
+        Extent3d { width: 10, height: 10, depth_or_array_layers: 10 }, 
+        TextureDimension::D3, 
+        data, 
+        TextureFormat::R8Unorm,
+        RenderAssetUsages::all()
+    );
 
-    let points = vec![
-        [1.0, 0.0, 0.0, 1.0],
-        [0.0, 1.0, 0.0, 1.0],
-        [0.0, 0.0, 1.0, 1.0],
-        [1.0, 1.0, 0.0, 1.0],
-        [0.0, 1.0, 1.0, 1.0],
-    ];
-
-    let points_handle = buffers.add(points);
+    let grid_handle = images.add(image);
     commands.spawn((
         Mesh2d(meshes.add(Mesh::from(ScreenSpaceQuad::default())).into()),
         MeshMaterial2d(materials.add(CameraMateralData {
@@ -86,7 +88,7 @@ fn setup(
             camera_horizontal: Vec3::new(1.0, 0.0, 0.0), 
             camera_vertical: Vec3::new(0.0, 1.0, 0.0), 
             aspect_ratio: 1.0, 
-            points: points_handle,
+            grid: grid_handle,
         }))
     ));
     // MaterialMesh2dBundle {
@@ -169,24 +171,24 @@ fn process_camera_rotation(
     }
 }
 
-fn move_balls(
-    mesh_material_query: Query<&MeshMaterial2d<CameraMateralData>>,
-    mut materials: ResMut<Assets<CameraMateralData>>,
-    mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
-    time: Res<Time>, 
-) {
-    let mesh_material = mesh_material_query.single();
-    let material = materials.get_mut(&mesh_material.0).unwrap();
-    let buffer = buffers.get_mut(&material.points).unwrap();
-    buffer.set_data((0..5).map(|i| {
-        let t = time.elapsed_secs() * 5.0;
-        [
-            2.0 * ops::sin(t + i as f32) + 0.5,
-            2.0 * ops::sin(t + i as f32 + 2.0) + 0.5,
-            2.0 * ops::sin(t + i as f32 + 4.0) + 0.5,
-            1.0,
-        ]
-    })
-    .collect::<Vec<[f32; 4]>>()
-    .as_slice())
-}
+// fn move_balls(
+//     mesh_material_query: Query<&MeshMaterial2d<CameraMateralData>>,
+//     mut materials: ResMut<Assets<CameraMateralData>>,
+//     mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
+//     time: Res<Time>, 
+// ) {
+//     let mesh_material = mesh_material_query.single();
+//     let material = materials.get_mut(&mesh_material.0).unwrap();
+//     let buffer = buffers.get_mut(&material.points).unwrap();
+//     buffer.set_data((0..5).map(|i| {
+//         let t = time.elapsed_secs();
+//         [
+//             2.0 * ops::sin(t + i as f32) + 0.5,
+//             2.0 * ops::sin(t + i as f32 + 2.0) + 0.5,
+//             2.0 * ops::sin(t + i as f32 + 4.0) + 0.5,
+//             1.0,
+//         ]
+//     })
+//     .collect::<Vec<[f32; 4]>>()
+//     .as_slice())
+// }

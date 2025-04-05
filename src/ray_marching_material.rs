@@ -17,8 +17,9 @@ pub struct CameraMateralData {
     #[uniform(0)]
     pub aspect_ratio: f32,
 
-    #[storage(1, read_only)]
-    pub points: Handle<ShaderStorageBuffer>,
+    #[texture(1, dimension="3d")]
+    #[sampler(2)]
+    pub grid: Handle<Image>,
 }
 
 // impl Default for CameraMateralData {

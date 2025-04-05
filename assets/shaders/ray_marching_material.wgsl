@@ -29,8 +29,8 @@ var<uniform> globals: Globals;
 @group(2) @binding(0)
 var<uniform> camera: Camera;
 
-@group(2) @binding(1)
-var<storage, read> points: array<vec4<f32>, 5>;
+@group(2) @binding(1) var grid_texture: texture_3d<f32>;
+@group(2) @binding(2) var grid_sampler: sampler;
 
 @group(3) @binding(0) 
 var<storage> lights: array<vec3f>;
@@ -103,7 +103,7 @@ fn get_distance_from_world(current_position: vec3<f32>) -> f32 {
     for (var i = 0; i < 5; i++) {
         var point = points[i];
         var sphere_distance = get_distance_from_sphere(current_position, point.xyz, point.w);
-        output = smooth_min(output, sphere_distance, 0.5);
+        output = smooth_min(output, sphere_distance, 1.0);
     }
     // var sphere_distance = get_distance_from_sphere(current_position, vec3<f32>(0.0, 1.0, 0.0), 1.0);
     
