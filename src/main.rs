@@ -1,12 +1,12 @@
 use std::default;
 
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle, window::{PrimaryWindow, WindowResized, WindowResolution}};
+use bevy::{prelude::*, render::camera, sprite::{Material2dPlugin, MaterialMesh2dBundle}, window::{PrimaryWindow, WindowResized, WindowResolution}};
 use bevy_inspector_egui::quick::*;
 use bevy::input::mouse::MouseMotion;
 
 
 use bevy_flycam::prelude::*;
-use ray_marching_material::RayMarchingPlugin;
+// use ray_marching_material::RayMarchingPlugin;
 
 
 mod screen_space_quad;
@@ -35,8 +35,9 @@ fn main() {
         .init_resource::<AspectRatio>()
         .add_plugins(ResourceInspectorPlugin::<AspectRatio>::default())
         .add_plugins(WorldInspectorPlugin::new())
+        .add_plugins(Material2dPlugin::<CameraMateralData>::default())
         // .add_plugins(NoCameraPlayerPlugin)
-        .add_plugins(RayMarchingPlugin)
+        // .add_plugins(RayMarchingPlugin)
         // .insert_resource(MovementSettings {
         //     sensitivity: 0.00005, // default: 0.00012
         //     speed: 12.0, // default: 12.0
@@ -79,11 +80,15 @@ fn setup(
 
 fn resize_event( 
     mut resize_reader: EventReader<WindowResized>,
-    mut aspect_ratio_resource: ResMut<AspectRatio>,
+    mesh_material_query: Query<&MeshMaterial2d<CameraMateralData>>,
+    mut materials: ResMut<Assets<CameraMateralData>>,
 ) {
-    for event in resize_reader.read() {
-        aspect_ratio_resource.aspect_ratio = event.width / event.height;
-        println!("updating aspect ratio");
+    let mesh_material = mesh_material_query.single();
+    if let Some(camera_data) = materials.get_mut(mesh_material) {
+        for event in resize_reader.read() {
+            camera_data.aspect_ratio = event.width / event.height;
+            println!("updating aspect ratio");
+        }
     }
 }
 
@@ -91,6 +96,8 @@ fn resize_event(
 fn process_camera_translation(
     keys: Res<ButtonInput<KeyCode>>,
     mut camera_query: Query<&mut Transform, With<Camera2d>>,
+    mesh_material_query: Query<&MeshMaterial2d<CameraMateralData>>,
+    mut materials: ResMut<Assets<CameraMateralData>>,
     time: Res<Time>, 
 ) {
     const SPEED: f32 = 1.0;
@@ -115,6 +122,14 @@ fn process_camera_translation(
         }
         if keys.pressed(KeyCode::KeyF) {
             transform.translation -= vertical_vector * SPEED * time.delta_secs();
+        }
+
+        let mesh_material = mesh_material_query.single();
+        if let Some(camera_data) = materials.get_mut(mesh_material) {
+            camera_data.camera_position = transform.translation;
+            camera_data.camera_forward = transform.forward().into();
+            camera_data.camera_horizontal = transform.right().into();
+            camera_data.camera_vertical = transform.up().into();
         }
     }
 }
