@@ -103,7 +103,7 @@ fn get_distance_from_world(current_position: vec3<f32>) -> f32 {
     for (var i = 0; i < 5; i++) {
         var point = points[i];
         var sphere_distance = get_distance_from_sphere(current_position, point.xyz, point.w);
-        output = smooth_min(output, sphere_distance, 0.1);
+        output = smooth_min(output, sphere_distance, 0.5);
     }
     // var sphere_distance = get_distance_from_sphere(current_position, vec3<f32>(0.0, 1.0, 0.0), 1.0);
     

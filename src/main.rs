@@ -48,7 +48,7 @@ fn main() {
         //     ..Default::default()
         // })
         .add_systems(Startup, setup)
-        .add_systems(Update, (resize_event, process_camera_rotation, process_camera_translation))
+        .add_systems(Update, (resize_event, process_camera_rotation, process_camera_translation, move_balls))
         .run();
 }
 
@@ -167,4 +167,26 @@ fn process_camera_rotation(
             }
         }
     }
+}
+
+fn move_balls(
+    mesh_material_query: Query<&MeshMaterial2d<CameraMateralData>>,
+    mut materials: ResMut<Assets<CameraMateralData>>,
+    mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
+    time: Res<Time>, 
+) {
+    let mesh_material = mesh_material_query.single();
+    let material = materials.get_mut(&mesh_material.0).unwrap();
+    let buffer = buffers.get_mut(&material.points).unwrap();
+    buffer.set_data((0..5).map(|i| {
+        let t = time.elapsed_secs() * 5.0;
+        [
+            2.0 * ops::sin(t + i as f32) + 0.5,
+            2.0 * ops::sin(t + i as f32 + 2.0) + 0.5,
+            2.0 * ops::sin(t + i as f32 + 4.0) + 0.5,
+            1.0,
+        ]
+    })
+    .collect::<Vec<[f32; 4]>>()
+    .as_slice())
 }
