@@ -1,6 +1,6 @@
 use std::default;
 
-use bevy::{prelude::*, render::camera, sprite::{Material2dPlugin, MaterialMesh2dBundle}, window::{PrimaryWindow, WindowResized, WindowResolution}};
+use bevy::{prelude::*, render::{camera, storage::ShaderStorageBuffer}, sprite::{Material2dPlugin, MaterialMesh2dBundle}, window::{PrimaryWindow, WindowResized, WindowResolution}};
 use bevy_inspector_egui::quick::*;
 use bevy::input::mouse::MouseMotion;
 
@@ -57,6 +57,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<CameraMateralData>>,
+    mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
 ) {
 
     commands.spawn((
@@ -67,9 +68,26 @@ fn setup(
     //     transform: Transform::from_xyz(0.0, 0.0, 5.0),
     //     ..default()
     // });
+
+    let points = vec![
+        [1.0, 0.0, 0.0, 1.0],
+        [0.0, 1.0, 0.0, 1.0],
+        [0.0, 0.0, 1.0, 1.0],
+        [1.0, 1.0, 0.0, 1.0],
+        [0.0, 1.0, 1.0, 1.0],
+    ];
+
+    let points_handle = buffers.add(points);
     commands.spawn((
         Mesh2d(meshes.add(Mesh::from(ScreenSpaceQuad::default())).into()),
-        MeshMaterial2d(materials.add(CameraMateralData::new()))
+        MeshMaterial2d(materials.add(CameraMateralData {
+            camera_position: Vec3::new(0.0, 0.0, 0.0), 
+            camera_forward: Vec3::new(0.0, 0.0, -1.0), 
+            camera_horizontal: Vec3::new(1.0, 0.0, 0.0), 
+            camera_vertical: Vec3::new(0.0, 1.0, 0.0), 
+            aspect_ratio: 1.0, 
+            points: points_handle,
+        }))
     ));
     // MaterialMesh2dBundle {
     //     mesh: meshes.add(Mesh::from(ScreenSpaceQuad::default())).into(),

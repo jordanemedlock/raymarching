@@ -5,7 +5,7 @@ struct Camera {
     forward: vec3<f32>,
     horizontal: vec3<f32>,
     vertical: vec3<f32>,
-    aspect_ratio: f32,
+    aspect_ratio: f32
 };
 
 struct Globals {
@@ -28,6 +28,9 @@ var<uniform> globals: Globals;
 
 @group(2) @binding(0)
 var<uniform> camera: Camera;
+
+@group(2) @binding(1)
+var<storage, read> points: array<vec4<f32>, 5>;
 
 @group(3) @binding(0) 
 var<storage> lights: array<vec3f>;
@@ -95,14 +98,21 @@ fn get_distance_from_box(current_position: vec3<f32>, box_center: vec3<f32>, box
 
 fn get_distance_from_world(current_position: vec3<f32>) -> f32 {
     var displacement = sin(5.0 * current_position.x + globals.time) * sin(5.0 * current_position.y + globals.time) * sin(5.0 * current_position.z + globals.time) * 0.25;
-    var sphere_distance = get_distance_from_sphere(current_position, vec3<f32>(0.0, 1.0, 0.0), 1.0);
+
+    var output = 1000.0;
+    for (var i = 0; i < 5; i++) {
+        var point = points[i];
+        var sphere_distance = get_distance_from_sphere(current_position, point.xyz, point.w);
+        output = smooth_min(output, sphere_distance, 0.1);
+    }
+    // var sphere_distance = get_distance_from_sphere(current_position, vec3<f32>(0.0, 1.0, 0.0), 1.0);
     
-    var sphere_distance1: f32 = get_distance_from_sphere(current_position, vec3<f32>(0.0, -1.0, 0.0), 1.0);
-    var box_distance1: f32 = get_distance_from_box(current_position, vec3<f32>(0.0, -1.0, 0.0), vec3<f32>(1.0, 1.0, 1.0));
+    // var sphere_distance1: f32 = get_distance_from_sphere(current_position, vec3<f32>(0.0, -1.0, 0.0), 1.0);
+    // var box_distance1: f32 = get_distance_from_box(current_position, vec3<f32>(0.0, -1.0, 0.0), vec3<f32>(1.0, 1.0, 1.0));
 
     //Add other shapes in this area
 
-    return smooth_min(sphere_distance, box_distance1, 0.5);
+    return output;
 }
 
 //Calculate the normal for any shape by calculating the gradient
