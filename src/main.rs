@@ -7,7 +7,7 @@ use bevy::input::mouse::MouseMotion;
 
 use bevy_flycam::prelude::*;
 // use ray_marching_material::RayMarchingPlugin;
-
+use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 
 mod screen_space_quad;
 use crate::screen_space_quad::ScreenSpaceQuad;
@@ -33,6 +33,8 @@ fn main() {
             ..default()
         }))
         .init_resource::<AspectRatio>()
+
+        .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(ResourceInspectorPlugin::<AspectRatio>::default())
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(Material2dPlugin::<CameraMateralData>::default())
@@ -69,7 +71,7 @@ fn setup(
     //     ..default()
     // });
     let data:Vec<u8> = (0..10*10*10).map(|i| {
-        if i < 100 { 1 } else { 0 }
+        if i < 100 && i % 3 == 0 { 255 } else { 0 }
     }).collect::<Vec<u8>>(); 
     let image = Image::new(
         Extent3d { width: 10, height: 10, depth_or_array_layers: 10 }, 
@@ -137,10 +139,10 @@ fn process_camera_translation(
         if keys.pressed(KeyCode::KeyD) {
             transform.translation += horizontal_vector * SPEED * time.delta_secs();
         }
-        if keys.pressed(KeyCode::KeyR) {
+        if keys.pressed(KeyCode::Space) {
             transform.translation += vertical_vector * SPEED * time.delta_secs();
         }
-        if keys.pressed(KeyCode::KeyF) {
+        if keys.pressed(KeyCode::ShiftLeft) {
             transform.translation -= vertical_vector * SPEED * time.delta_secs();
         }
 

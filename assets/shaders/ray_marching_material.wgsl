@@ -23,6 +23,9 @@ struct Globals {
 #endif
 }
 
+const grid_offset: vec3<f32> = vec3(0,0,0);
+const grid_scale: vec3<f32> = vec3(1.0, 1.0, 1.0);
+
 @group(0) @binding(1)
 var<uniform> globals: Globals;
 
@@ -96,36 +99,48 @@ fn get_distance_from_box(current_position: vec3<f32>, box_center: vec3<f32>, box
     return unsigned_dst + dst_inside_box;
 }
 
-fn get_distance_from_world(current_position: vec3<f32>) -> f32 {
-    var displacement = sin(5.0 * current_position.x + globals.time) * sin(5.0 * current_position.y + globals.time) * sin(5.0 * current_position.z + globals.time) * 0.25;
-
-    var output = 1000.0;
-    for (var i = 0; i < 5; i++) {
-        var point = points[i];
-        var sphere_distance = get_distance_from_sphere(current_position, point.xyz, point.w);
-        output = smooth_min(output, sphere_distance, 1.0);
+fn customSign(x: f32) -> f32 {
+    if (x >= 0) {
+        return 1.0;
+    } else {
+        return 0.0;
     }
-    // var sphere_distance = get_distance_from_sphere(current_position, vec3<f32>(0.0, 1.0, 0.0), 1.0);
-    
-    // var sphere_distance1: f32 = get_distance_from_sphere(current_position, vec3<f32>(0.0, -1.0, 0.0), 1.0);
-    // var box_distance1: f32 = get_distance_from_box(current_position, vec3<f32>(0.0, -1.0, 0.0), vec3<f32>(1.0, 1.0, 1.0));
+}
 
-    //Add other shapes in this area
+fn customSignV3(x: vec3<f32>) -> vec3<f32> {
+    return vec3(customSign(x.x), customSign(x.y), customSign(x.z));
+}
+
+fn get_distance_from_world(current_position: vec3<f32>) -> f32 {
+    
+    var output: f32 = 1000000.0;
+    var grid_size: vec3<u32> = textureDimensions(grid_texture);
+    var half_grid: vec3<f32> = vec3<f32>(grid_size) / 2.0f;
+
+    for (var x: u32 = 0; x < grid_size.x; x++) {
+        for (var y: u32 = 0; y < grid_size.y; y++) {
+            for (var z: u32 = 0; z < grid_size.z; z++) {
+                var index = vec3<f32>(f32(x), f32(y), f32(z));
+
+                var grid_value = textureSample(grid_texture, grid_sampler, index / vec3<f32>(grid_size)).r;
+
+                if (grid_value > 0) {
+                    output = min(
+                        output, 
+                        get_distance_from_sphere(
+                            current_position,
+                            (index + vec3(0.5, 0.5, 0.5)) * grid_scale + grid_offset,
+                            length(grid_scale) / 2.0
+                        )
+                    );
+                }
+            }
+        }
+    }
 
     return output;
 }
 
-//Calculate the normal for any shape by calculating the gradient
-// We calculate the gradient by taking a small offset in each unit direction and find the difference
-fn calculate_normal(current_position: vec3<f32>) -> vec3<f32> {
-    var SMALL_STEP = vec2<f32>(0.001, 0.0);
-
-    var gradient_x = get_distance_from_world(current_position + SMALL_STEP.xyy) - get_distance_from_world(current_position - SMALL_STEP.xyy);
-    var gradient_y = get_distance_from_world(current_position + SMALL_STEP.yxy) - get_distance_from_world(current_position - SMALL_STEP.yxy);
-    var gradient_z = get_distance_from_world(current_position + SMALL_STEP.yyx) - get_distance_from_world(current_position - SMALL_STEP.yyx);
-
-    return normalize(vec3<f32>(gradient_x, gradient_y, gradient_z));
-}
 
 fn ray_march(ray_origin: vec3<f32>, ray_direction: vec3<f32>) -> vec3<f32> {
     var total_distance_traveled = 0.0;
@@ -162,6 +177,18 @@ fn ray_march(ray_origin: vec3<f32>, ray_direction: vec3<f32>) -> vec3<f32> {
     return vec3<f32>(0.0, 0.0, 0.0);
 }
 
+
+//Calculate the normal for any shape by calculating the gradient
+// We calculate the gradient by taking a small offset in each unit direction and find the difference
+fn calculate_normal(current_position: vec3<f32>) -> vec3<f32> {
+    var SMALL_STEP = vec2<f32>(0.001, 0.0);
+
+    var gradient_x = get_distance_from_world(current_position + SMALL_STEP.xyy) - get_distance_from_world(current_position - SMALL_STEP.xyy);
+    var gradient_y = get_distance_from_world(current_position + SMALL_STEP.yxy) - get_distance_from_world(current_position - SMALL_STEP.yxy);
+    var gradient_z = get_distance_from_world(current_position + SMALL_STEP.yyx) - get_distance_from_world(current_position - SMALL_STEP.yyx);
+
+    return normalize(vec3<f32>(gradient_x, gradient_y, gradient_z));
+}
 @fragment
 fn fragment(in: FragmentIn) -> @location(0) vec4<f32> {
     var camera_origin = camera.position;
