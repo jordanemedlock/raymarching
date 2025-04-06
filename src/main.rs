@@ -59,7 +59,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<CameraMateralData>>,
-    mut images: ResMut<Assets<Image>>,
+    mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
 ) {
 
     commands.spawn((
@@ -70,18 +70,15 @@ fn setup(
     //     transform: Transform::from_xyz(0.0, 0.0, 5.0),
     //     ..default()
     // });
-    let data:Vec<u8> = (0..10*10*10).map(|i| {
-        if i < 100 && i % 3 == 0 { 255 } else { 0 }
-    }).collect::<Vec<u8>>(); 
-    let image = Image::new(
-        Extent3d { width: 10, height: 10, depth_or_array_layers: 10 }, 
-        TextureDimension::D3, 
-        data, 
-        TextureFormat::R8Unorm,
-        RenderAssetUsages::all()
-    );
+    let data: Vec<[f32; 4]> = vec![
+        [1.0, 0.0, 0.0, 1.0],
+        [0.0, 1.0, 0.0, 1.0],
+        [0.0, 0.0, 1.0, 1.0],
+        [1.0, 1.0, 0.0, 1.0],
+        [0.0, 1.0, 1.0, 1.0],
+    ];
 
-    let grid_handle = images.add(image);
+    let points_handle = buffers.add(ShaderStorageBuffer::from(data));
     commands.spawn((
         Mesh2d(meshes.add(Mesh::from(ScreenSpaceQuad::default())).into()),
         MeshMaterial2d(materials.add(CameraMateralData {
@@ -90,7 +87,7 @@ fn setup(
             camera_horizontal: Vec3::new(1.0, 0.0, 0.0), 
             camera_vertical: Vec3::new(0.0, 1.0, 0.0), 
             aspect_ratio: 1.0, 
-            grid: grid_handle,
+            points: points_handle,
         }))
     ));
     // MaterialMesh2dBundle {

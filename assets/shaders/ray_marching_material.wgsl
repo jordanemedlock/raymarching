@@ -32,8 +32,7 @@ var<uniform> globals: Globals;
 @group(2) @binding(0)
 var<uniform> camera: Camera;
 
-@group(2) @binding(1) var grid_texture: texture_3d<f32>;
-@group(2) @binding(2) var grid_sampler: sampler;
+@group(2) @binding(1) var<storage, read> points: array<vec4<f32>>;
 
 @group(3) @binding(0) 
 var<storage> lights: array<vec3f>;
@@ -114,27 +113,21 @@ fn customSignV3(x: vec3<f32>) -> vec3<f32> {
 fn get_distance_from_world(current_position: vec3<f32>) -> f32 {
     
     var output: f32 = 1000000.0;
-    var grid_size: vec3<u32> = textureDimensions(grid_texture);
-    var half_grid: vec3<f32> = vec3<f32>(grid_size) / 2.0f;
+    var length = arrayLength(&points);
 
-    for (var x: u32 = 0; x < grid_size.x; x++) {
-        for (var y: u32 = 0; y < grid_size.y; y++) {
-            for (var z: u32 = 0; z < grid_size.z; z++) {
-                var index = vec3<f32>(f32(x), f32(y), f32(z));
+    for (var i: u32 = 0; i < length; i++) {
+        var point: vec4<f32> = points[i];
+        if (point.w > 0) {
+            output = smooth_min(
+                output,
+                get_distance_from_sphere(
+                    current_position, 
+                    point.xyz,
+                    1.0
+                ),
+                0.25
+            );
 
-                var grid_value = textureSample(grid_texture, grid_sampler, index / vec3<f32>(grid_size)).r;
-
-                if (grid_value > 0) {
-                    output = min(
-                        output, 
-                        get_distance_from_sphere(
-                            current_position,
-                            (index + vec3(0.5, 0.5, 0.5)) * grid_scale + grid_offset,
-                            length(grid_scale) / 2.0
-                        )
-                    );
-                }
-            }
         }
     }
 
