@@ -23,16 +23,23 @@ struct Globals {
 #endif
 }
 
-const grid_offset: vec3<f32> = vec3(0,0,0);
-const grid_scale: vec3<f32> = vec3(1.0, 1.0, 1.0);
+struct Octtree {
+    data: array<u32>
+}
 
+const grid_offset: vec3<f32> = vec3(0,0,0);
+const grid_scale: vec3<f32> = vec3(2.0, 2.0, 2.0);
+const grid_ordering: array<vec3<u32>, 8> =  array<vec3<u32>, 8>(
+    vec3(0,0,0), vec3(1,0,0), vec3(0,1,0), vec3(1,1,0),
+    vec3(0,0,1), vec3(1,0,1), vec3(0,1,1), vec3(1,1,1)
+);
 @group(0) @binding(1)
 var<uniform> globals: Globals;
 
 @group(2) @binding(0)
 var<uniform> camera: Camera;
 
-@group(2) @binding(1) var<storage, read> points: array<vec4<f32>>;
+@group(2) @binding(1) var<storage, read> octtree: Octtree;
 
 @group(3) @binding(0) 
 var<storage> lights: array<vec3f>;
@@ -113,22 +120,21 @@ fn customSignV3(x: vec3<f32>) -> vec3<f32> {
 fn get_distance_from_world(current_position: vec3<f32>) -> f32 {
     
     var output: f32 = 1000000.0;
-    var length = arrayLength(&points);
+    var length = arrayLength(&octtree.data);
 
     for (var i: u32 = 0; i < length; i++) {
-        var point: vec4<f32> = points[i];
-        if (point.w > 0) {
-            output = smooth_min(
-                output,
-                get_distance_from_sphere(
-                    current_position, 
-                    point.xyz,
-                    1.0
-                ),
-                0.25
-            );
+        var value = octtree.data[i];
+        var direction = grid_ordering[i % 8];
 
-        }
+        output = min(
+            output,
+            get_distance_from_sphere(
+                current_position,
+                vec3<f32>(direction) * grid_scale + grid_offset,
+                0.5
+            )
+        );
+
     }
 
     return output;

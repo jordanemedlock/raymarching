@@ -15,6 +15,9 @@ use crate::screen_space_quad::ScreenSpaceQuad;
 mod ray_marching_material;
 use crate::ray_marching_material::CameraMateralData;
 
+mod octtree;
+use crate::octtree::Octtree;
+
 //Struct which becomes the Global Resource for the aspect ratio
 #[derive(Resource, Reflect, Default)]
 pub struct AspectRatio {
@@ -33,7 +36,7 @@ fn main() {
             ..default()
         }))
         .init_resource::<AspectRatio>()
-
+        .init_resource::<Octtree>()
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(ResourceInspectorPlugin::<AspectRatio>::default())
         .add_plugins(WorldInspectorPlugin::new())
@@ -59,6 +62,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<CameraMateralData>>,
+    octtree: Res<Octtree>,
     mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
 ) {
 
@@ -70,15 +74,10 @@ fn setup(
     //     transform: Transform::from_xyz(0.0, 0.0, 5.0),
     //     ..default()
     // });
-    let data: Vec<[f32; 4]> = vec![
-        [1.0, 0.0, 0.0, 1.0],
-        [0.0, 1.0, 0.0, 1.0],
-        [0.0, 0.0, 1.0, 1.0],
-        [1.0, 1.0, 0.0, 1.0],
-        [0.0, 1.0, 1.0, 1.0],
-    ];
 
-    let points_handle = buffers.add(ShaderStorageBuffer::from(data));
+    let octtree_handle = buffers.add(
+        ShaderStorageBuffer::from(&octtree.data)
+    );
     commands.spawn((
         Mesh2d(meshes.add(Mesh::from(ScreenSpaceQuad::default())).into()),
         MeshMaterial2d(materials.add(CameraMateralData {
@@ -87,7 +86,7 @@ fn setup(
             camera_horizontal: Vec3::new(1.0, 0.0, 0.0), 
             camera_vertical: Vec3::new(0.0, 1.0, 0.0), 
             aspect_ratio: 1.0, 
-            points: points_handle,
+            octtree: octtree_handle,
         }))
     ));
     // MaterialMesh2dBundle {

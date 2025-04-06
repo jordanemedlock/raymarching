@@ -1,6 +1,6 @@
 use bevy::{prelude::*, render::{render_asset::RenderAssets, render_resource::{encase, AsBindGroup, OwnedBindingResource, ShaderRef, ShaderType}, renderer::RenderQueue, storage::ShaderStorageBuffer, Extract, Render, RenderApp, RenderSet}, sprite::{Material2d, Material2dPlugin, PreparedMaterial2d}};
 
-use crate::AspectRatio;
+use crate::octtree::Octtree;
 
 //New material created to setup custom shader
 #[derive(AsBindGroup, Debug, Clone, TypePath, Asset)]
@@ -18,7 +18,7 @@ pub struct CameraMateralData {
     pub aspect_ratio: f32,
 
     #[storage(1, read_only)]
-    pub points: Handle<ShaderStorageBuffer>,
+    pub octtree: Handle<ShaderStorageBuffer>,
 }
 
 //Setup the CameraMateralData to use the custom shader file for the vertex and fragment shader
